@@ -453,7 +453,7 @@ async def teamsDisplay(ctx, blueTeam, redTeam, blueRank, redRank):
     #global blueRank
     #global redRank
     msgList = []
-    channel = await client.fetch_channel(836993528126767114)
+    channel = await client.fetch_channel(858854349936525332)
     for i in blueTeam:
         msgList.append(ELOpop[i][0] + "\n")
     bMsg = "".join(msgList)
@@ -468,7 +468,7 @@ async def teamsDisplay(ctx, blueTeam, redTeam, blueRank, redRank):
     embed2 = discord.Embed(title = "Teams Sorted!")
     embed2.add_field(name = f"Blue Team {v['t1img']} {blueRank}", value= bMsg, inline=True)
     embed2.add_field(name="\u200b", value = "\u200b")
-    embed2.add_field(name = f"Red Team {v['t1img']} {redRank}", value= rMsg, inline=True)
+    embed2.add_field(name = f"Red Team {v['t2img']} {redRank}", value= rMsg, inline=True)
     sMsg = await ctx.send(embed = embed)
     await channel.send(embed = embed2)
     await sMsg.add_reaction("👎")

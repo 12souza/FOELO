@@ -59,6 +59,7 @@ captMode = 0
 vMsg = None
 serverVote = 0
 mapVote = 0
+mapPick = {}
 rankedOrder = []
 pickCount = 0
 msg = None
@@ -122,6 +123,22 @@ async def search(ctx, searchkey):
         else:
             await ctx.send("No results with that search string..")
 
+def searchmap(mapname):
+    with open('mainmaps.json') as f:
+        mapList = json.load(f)
+
+    searchList = []
+    for i in list(mapList):
+        if(mapname.lower() in i.lower()):
+            searchList.append(i)
+    print(searchList)
+    if(len(searchList) > 1):
+        return "Too many results, please be more specific"
+    elif(len(searchList) == 1):
+        return searchList[0]
+    elif(len(searchList) == 0):
+        return mapname
+
 def DePopulatePickup():
     global cap1
     global cap2
@@ -152,6 +169,7 @@ def DePopulatePickup():
     global fTimer
     global inVote
     global eligiblePlayers
+    global mapPick
     global reVote
     global serverVote
     global mapVote
@@ -170,6 +188,7 @@ def DePopulatePickup():
     newTeam = 0
     pastTeams = []
     winner = None
+    mapPick = {}
     mapChoice1 = None
     mapChoice2 = None
     mapChoice3 = None
@@ -228,6 +247,7 @@ def PickMaps():
     global loveMaps
     global hateMaps
     global mapVotes
+    global mapPick
     global alreadyVoted
     global votePhase
     multiple = 0
@@ -236,41 +256,17 @@ def PickMaps():
     
     mapVotes = {}
     alreadyVoted = []
-    #print(mapList)
-    mapPick = []
-    for i in list(mapList):
-        if(i not in mapSelected):
-            if((i not in lastFive) and (i not in hateMaps)):
-                if(i in loveMaps):
-                    mapPick.append(i)
-                    mapPick.append(i)
-                    mapPick.append(i)
-                    mapPick.append(i)
-                    mapPick.append(i)
-                else:
-                    mapPick.append(i)
-    mapPick2 = []
-    with open('specmaps.json') as f:
-        mapList = json.load(f)
+    mapPick = list(mapPick.values())
+    eligibleMaps = list(mapList)
+    while(len(mapPick) < 8):
+        rMap = random.choice(eligibleMaps)
+        if(rMap not in mapPick):
+            mapPick.append(rMap)
+            eligibleMaps.remove(rMap)
+    print(mapPick)
 
-    for i in list(mapList):
-        if(i not in mapSelected):
-            if((i not in lastFive) and (i not in hateMaps)):
-                if(i in loveMaps):
-                    mapPick2.append(i)
-                    mapPick2.append(i)
-                    mapPick2.append(i)
-                    mapPick2.append(i)
-                    mapPick2.append(i)
-                else:
-                    mapPick2.append(i)
-
-    print(f"Map Lists: {mapPick} {mapPick2}" )
-    print(f"Maps Selected: {mapSelected}")
-    print(f"Love Maps: {loveMaps}")
-    print(f"Hate Maps: {hateMaps}")
-    print(f"Last Five: {lastFive}")
-
+    '''for i in mapPick:
+        for j in mapPick:'''
     #print(mapPick)
     mapChoice1 = random.choice(mapPick)
     while(mapChoice1 in mapPick):
@@ -282,9 +278,9 @@ def PickMaps():
         mapPick.remove(mapChoice2)
     mapVotes[mapChoice2] = []
     mapSelected.append(mapChoice2)
-    mapChoice3 = random.choice(mapPick2)
-    while(mapChoice3 in mapPick2):
-        mapPick2.remove(mapChoice3)
+    mapChoice3 = random.choice(mapPick)
+    while(mapChoice3 in mapPick):
+        mapPick.remove(mapChoice3)
     mapVotes[mapChoice3] = []
     mapSelected.append(mapChoice3)
 
@@ -329,6 +325,7 @@ async def voteSetup():
     global alreadyVoted
     global vMsg
     global votable
+    global mapPick
 
 
     channel = await client.fetch_channel(v['pID'])
@@ -364,7 +361,7 @@ async def voteSetup():
     elif((reVote == 0) and (serverVote == 0)):
         with open('ELOpop.json') as f:
             ELOpop = json.load(f)
-        
+          
         alreadyVoted = []
         mapVotes = {}           
         PickMaps()
@@ -380,19 +377,18 @@ async def voteSetup():
             toVoteString = "\n💩 " + ", ".join(playersAbstained) +  " need to vote 💩```"
         with open('mainmaps.json') as f:
             mapList = json.load(f)
-        with open('specmaps.json') as f:
-            mapList2 = json.load(f)
+
         vMsg = await channel.send("```Vote up and make sure you hydrate!\n\n"
-                                        + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1)) + "   " + str(mapList[mapChoice1]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice1) + "\n"
-                                        + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2)) + "   " + str(mapList[mapChoice2]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice2) + "\n"
-                                        + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3)) + "   " + str(mapList2[mapChoice3]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice3) + "\n"
-                                        + "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
+                                        + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1))  + mapVoteOutput(mapChoice1) + "\n"
+                                        + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2))  + mapVoteOutput(mapChoice2) + "\n"
+                                        + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3))  + mapVoteOutput(mapChoice3)
+                                        #+ "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
                                         + toVoteString)
 
         await vMsg.add_reaction("1️⃣")
         await vMsg.add_reaction("2️⃣")
         await vMsg.add_reaction("3️⃣")
-        await vMsg.add_reaction("4️⃣")
+        #await vMsg.add_reaction("4️⃣")
         votable = 1
 
     elif((reVote == 1) and (serverVote == 0)):
@@ -416,9 +412,9 @@ async def voteSetup():
         with open('specmaps.json') as f:
             mapList2 = json.load(f)
         vMsg = await channel.send("```Vote up and make sure you hydrate!\n\n"
-                                        + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1)) + "   " + str(mapList[mapChoice1]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice1) + "\n"
-                                        + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2)) + "   " + str(mapList[mapChoice2]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice2) + "\n"
-                                        + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3)) + "   " + str(mapList2[mapChoice3]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice3) + "\n"
+                                        + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1)) +  mapVoteOutput(mapChoice1) + "\n"
+                                        + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2))  + mapVoteOutput(mapChoice2) + "\n"
+                                        + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3)) +  mapVoteOutput(mapChoice3) + "\n" #"   " + str(mapList2[mapChoice3]) + " mirv" + " " * 15 +
                                         + "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
                                         + toVoteString)
 
@@ -453,7 +449,7 @@ async def teamsDisplay(ctx, blueTeam, redTeam, blueRank, redRank):
     #global blueRank
     #global redRank
     msgList = []
-    channel = await client.fetch_channel(858854349936525332)
+    channel = await client.fetch_channel(v['pID']) #858854349936525332
     for i in blueTeam:
         msgList.append(ELOpop[i][0] + "\n")
     bMsg = "".join(msgList)
@@ -797,13 +793,34 @@ async def requeue(ctx):
     #print(playersAdded)
     await pickupDisplay(ctx)
 
+@client.command(pass_context = True)
+async def maplist(ctx):
+    global mapPick
+
+    cMaps = list(mapPick.values())
+    await ctx.send(f"The current maps are {str(cMaps)[1:-1]}")
+
+@client.command(pass_context = True)
+async def map(ctx, map = None):
+    global mapPick
+    if(str(ctx.author.id) in playersAdded):
+        if(map not in list(mapPick.values())):    
+            
+            map = searchmap(map)
+            mapPick[str(ctx.author.id)] = map
+            await ctx.send(f"{map} has been added to the maplist")
+        else:
+            await ctx.author.send("Map has already been picked..")
+    else:
+        await ctx.author.send("You are not in the pickup..")
 
 @client.command(pass_context = True , aliases=['+'])
-async def add(ctx, cap = None):
+async def add(ctx, cap = None, map = None):
     if(ctx.channel.name == v['pc']):    
         global playersAdded
         global capList
         global ELOpop
+        global mapPick
         playerID = str(ctx.author.id)
         if(len(playersAdded) <= 19):    
             with open('ELOpop.json') as f:
@@ -817,6 +834,13 @@ async def add(ctx, cap = None):
                 
                 if(cap == "cap"):
                     capList.append(playerID)
+                if(cap == "map"):
+                    map = searchmap(map)
+                    if(map not in list(mapPick.values())):
+                        mapPick[playerID] = map
+                        await ctx.send(f"{map} has been added to the maplist")
+                    else:
+                        await ctx.author.send("You are still added, but map has already been picked")
                 
                 playersAdded.append(playerID)
             else:
@@ -830,17 +854,20 @@ async def remove(ctx):
     if(ctx.channel.name == v['pc']):
         global playersAdded
         global capList
+        global mapPick
         playerID = str(ctx.author.id)
         if(playerID in playersAdded):
             playersAdded.remove(playerID)
             if(playerID in capList):
                 capList.remove(playerID)
-        
+        if(playerID in list(mapPick)):
+            del mapPick[playerID]
         await pickupDisplay(ctx)
 
 @client.command(pass_context=True)
 @commands.has_role(v['runner'])
 async def kick(ctx, player: discord.Member):
+    global playerID
     if(ctx.channel.name == v['pc']):
         global playersAdded
         global capList
@@ -849,6 +876,8 @@ async def kick(ctx, player: discord.Member):
             playersAdded.remove(playerID)
             if(playerID in capList):
                 capList.remove(playerID)
+        if(playerID in list(mapPick)):
+            del mapPick[playerID]
         await pickupDisplay(ctx)
     
 @client.command(pass_context=True)
@@ -1938,18 +1967,18 @@ async def on_reaction_add(reaction, user):
                             elif(serverVote == 0):  
                                 if(reVote == 0):    
                                     await vMsg.edit(content="```Vote up and make sure you hydrate!\n\n"
-                                                    + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1)) + "   " + str(mapList[mapChoice1]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice1) + "\n"
-                                                    + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2)) + "   " + str(mapList[mapChoice2]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice2) + "\n"
-                                                    + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3)) + "   " + str(mapList2[mapChoice3]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice3) + "\n"
-                                                    + "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
+                                                    + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1))  + mapVoteOutput(mapChoice1) + "\n"
+                                                    + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2)) + mapVoteOutput(mapChoice2) + "\n"
+                                                    + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3)) + mapVoteOutput(mapChoice3)
+                                                    #+ "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
                                                     + toVoteString)
                                 elif(reVote == 1):
                                     if(serverVote == 0):
                                         await vMsg.edit(content="```Vote up and make sure you hydrate!\n\n"
-                                                    + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1)) + "   " + str(mapList[mapChoice1]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice1) + "\n"
-                                                    + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2)) + "   " + str(mapList[mapChoice2]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice2) + "\n"
-                                                    + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3)) + "   " + str(mapList2[mapChoice3]) + " mirv" + " " * 15 + mapVoteOutput(mapChoice3) + "\n"
-                                                    + "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
+                                                    + "1️⃣ " + mapChoice1 + " " * (25 - len(mapChoice1))  + mapVoteOutput(mapChoice1) + "\n"
+                                                    + "2️⃣ " + mapChoice2 + " " * (25 - len(mapChoice2))  + mapVoteOutput(mapChoice2) + "\n"
+                                                    + "3️⃣ " + mapChoice3 + " " * (25 - len(mapChoice3))  + mapVoteOutput(mapChoice3)
+                                                    #+ "4️⃣ " + mapChoice4 + " " * (49 - len(mapChoice4)) + mapVoteOutput(mapChoice4)
                                                     + toVoteString)
                             print(alreadyVoted)
                             print(mapVotes)
